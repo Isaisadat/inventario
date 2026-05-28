@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventario Compartido</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+</head>
+<body>
+  <div id="loginPage" class="login-page">
+    <div class="login-container">
+      <h1>Inventario</h1>
+      <p class="subtitle">Compartido · <span>Fleure · Joyería & Maquillaje</span></p>
+      <div id="loginError" class="error-msg"></div>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="username">Usuario</label>
+          <input type="text" id="username" placeholder="fernanda o isai" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="appPage" class="app-layout" style="display:none">
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-brand">
+        <h2>Inventario <span>Compartido</span></h2>
+        <small>Control de stock</small>
+      </div>
+      <ul class="sidebar-nav">
+        <li><a href="#" data-page="dashboard" class="active"><span class="icon">📊</span>Dashboard</a></li>
+        <li><a href="#" data-page="products"><span class="icon">📦</span>Productos</a></li>
+        <li><a href="#" data-page="sales"><span class="icon">💰</span>Ventas</a></li>
+        <li><a href="#" data-page="clients"><span class="icon">👥</span>Clientes</a></li>
+      </ul>
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="user-avatar" id="userAvatar">F</div>
+          <div class="user-details">
+            <div class="user-name" id="userName">Fernanda</div>
+            <div class="user-role" id="userRole">fleure</div>
+          </div>
+        </div>
+        <button class="btn-logout" id="logoutBtn">Cerrar Sesión</button>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <button class="mobile-toggle" id="mobileToggle">☰</button>
+
+      <!-- DASHBOARD -->
+      <div id="pageDashboard" class="page">
+        <div class="page-header">
+          <div><h1>Dashboard</h1><p>Resumen de tu inventario y ventas</p></div>
+        </div>
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card primary"><div class="stat-icon">📦</div><div class="stat-value" id="statProductos">0</div><div class="stat-label">Productos</div></div>
+          <div class="stat-card success"><div class="stat-icon">📊</div><div class="stat-value" id="statUnidades">0</div><div class="stat-label">Unidades totales</div></div>
+          <div class="stat-card warning"><div class="stat-icon">💰</div><div class="stat-value" id="statInversion">$0</div><div class="stat-label">Inversión total</div></div>
+          <div class="stat-card primary"><div class="stat-icon">📈</div><div class="stat-value" id="statVentaPotencial">$0</div><div class="stat-label">Venta potencial</div></div>
+          <div class="stat-card success"><div class="stat-icon">🎯</div><div class="stat-value" id="statGanancia">$0</div><div class="stat-label">Ganancia potencial</div></div>
+          <div class="stat-card" style="border-left:4px solid var(--warning)"><div class="stat-icon">⚠️</div><div class="stat-value" id="statBajoStock">0</div><div class="stat-label">Bajo stock</div></div>
+          <div class="stat-card" style="border-left:4px solid var(--secondary)"><div class="stat-icon">🏭</div><div class="stat-value" id="statProveedores">0</div><div class="stat-label">Proveedores</div></div>
+          <div class="stat-card" style="border-left:4px solid #e17055"><div class="stat-icon">🛒</div><div class="stat-value" id="statVentasRealizadas">0</div><div class="stat-label">Ventas realizadas</div></div>
+          <div class="stat-card" style="border-left:4px solid #00b894"><div class="stat-icon">💵</div><div class="stat-value" id="statIngresos">$0</div><div class="stat-label">Ingresos</div></div>
+          <div class="stat-card" style="border-left:4px solid #6c5ce7"><div class="stat-icon">🎯</div><div class="stat-value" id="statGananciaReal">$0</div><div class="stat-label">Ganancia real</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h2>📈 Ventas mensuales</h2></div>
+          <div class="card-body"><canvas id="chartMonthly" height="250"></canvas></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h2>🏆 Productos más vendidos</h2></div>
+          <div class="card-body" id="bestSellersContainer"><div class="empty-state"><div class="empty-icon">📊</div><h3>Sin datos</h3><p>No hay ventas registradas</p></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h2>⚠️ Productos con bajo stock</h2></div>
+          <div class="card-body" id="lowStockContainer"><div class="empty-state"><div class="empty-icon">✅</div><h3>Todo en orden</h3><p>No hay productos con bajo stock</p></div></div>
+        </div>
+      </div>
+
+      <!-- PRODUCTS -->
+      <div id="pageProducts" class="page" style="display:none">
+        <div class="page-header">
+          <div><h1>Productos</h1><p>Administra tu inventario</p></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="filter-group" style="gap:4px">
+              <button class="btn btn-sm btn-secondary" onclick="exportProducts('csv')" title="Exportar CSV">⬇ CSV</button>
+              <button class="btn btn-sm btn-secondary" onclick="exportProducts('pdf')" title="Exportar PDF">⬇ PDF</button>
+            </div>
+            <button class="btn btn-primary" id="addProductBtn">+ Nuevo Producto</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="toolbar">
+              <div class="search-box"><span class="search-icon">🔍</span><input type="text" id="searchInput" placeholder="Buscar productos..."></div>
+              <div class="filter-group">
+                <select id="filterProveedor"><option value="">Todos los proveedores</option></select>
+                <select id="filterColor"><option value="">Todos los colores</option></select>
+                <select id="filterMaterial"><option value="">Todos los materiales</option></select>
+                <select id="filterEstado"><option value="true">Activos</option><option value="">Todos</option></select>
+              </div>
+            </div>
+          </div>
+          <div class="card-body"><div id="productsContainer"></div></div>
+        </div>
+      </div>
+
+      <!-- SALES -->
+      <div id="pageSales" class="page" style="display:none">
+        <div class="page-header">
+          <div><h1>Ventas</h1><p>Registro de ventas realizadas</p></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="filter-group" style="gap:4px">
+              <button class="btn btn-sm btn-secondary" onclick="exportSales('csv')" title="Exportar CSV">⬇ CSV</button>
+              <button class="btn btn-sm btn-secondary" onclick="exportSales('pdf')" title="Exportar PDF">⬇ PDF</button>
+            </div>
+            <button class="btn btn-success" id="addSaleBtn">+ Nueva Venta</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="toolbar">
+              <div class="search-box"><span class="search-icon">🔍</span><input type="text" id="saleSearchInput" placeholder="Buscar en ventas..."></div>
+              <div class="filter-group">
+                <input type="date" id="saleFilterDesde" title="Desde"><input type="date" id="saleFilterHasta" title="Hasta">
+              </div>
+            </div>
+          </div>
+          <div class="card-body"><div id="salesContainer"></div></div>
+        </div>
+      </div>
+
+      <!-- CLIENTS -->
+      <div id="pageClients" class="page" style="display:none">
+        <div class="page-header">
+          <div><h1>Clientes</h1><p>Registro de clientes</p></div>
+          <button class="btn btn-primary" id="addClientBtn">+ Nuevo Cliente</button>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="search-box"><span class="search-icon">🔍</span><input type="text" id="clientSearchInput" placeholder="Buscar clientes..."></div>
+          </div>
+          <div class="card-body"><div id="clientsContainer"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUCT MODAL -->
+  <div class="modal-overlay" id="productModal">
+    <div class="modal">
+      <div class="modal-header"><h2 id="modalTitle">Nuevo Producto</h2><button class="modal-close" id="modalClose">&times;</button></div>
+      <form id="productForm">
+        <div class="modal-body">
+          <input type="hidden" id="productId">
+          <div class="form-row">
+            <div class="form-group"><label for="pNombre">Nombre del producto *</label><input type="text" id="pNombre" required></div>
+            <div class="form-group"><label for="pProveedor">Proveedor *</label><input type="text" id="pProveedor" required></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label for="pCantidad">Cantidad *</label><input type="number" id="pCantidad" required min="0"></div>
+            <div class="form-group"><label for="pCategoria">Categoría</label><input type="text" id="pCategoria"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label for="pPrecioCompra">Precio de compra ($) *</label><input type="number" id="pPrecioCompra" required min="0" step="0.01"></div>
+            <div class="form-group"><label for="pPrecioVenta">Precio de venta ($) *</label><input type="number" id="pPrecioVenta" required min="0" step="0.01"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label for="pColor">Color</label><input type="text" id="pColor" placeholder="Ej: Dorado, Plata, Rojo"></div>
+            <div class="form-group"><label for="pMaterial">Material</label><input type="text" id="pMaterial" placeholder="Ej: Oro 14k, Plata 925"></div>
+          </div>
+          <div class="form-group"><label for="pUrl">URL del producto</label><input type="url" id="pUrl" placeholder="https://..."></div>
+          <div class="form-row">
+            <div class="form-group"><label for="pFechaCompra">Fecha de compra</label><input type="date" id="pFechaCompra"></div>
+            <div class="form-group"><label for="pFechaPublicacion">Fecha de publicación</label><input type="date" id="pFechaPublicacion"></div>
+          </div>
+          <div class="form-group"><label for="pNotas">Notas</label><textarea id="pNotas"></textarea></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="modalCancel">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="modalSave">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SALE MODAL (CART) -->
+  <div class="modal-overlay" id="saleModal">
+    <div class="modal" style="max-width:700px">
+      <div class="modal-header"><h2>Nueva Venta</h2><button class="modal-close" id="saleModalClose">&times;</button></div>
+      <form id="saleForm">
+        <div class="modal-body">
+          <div class="form-group"><label for="sCliente">Cliente</label>
+            <select id="sCliente"><option value="">— Cliente ocasional —</option></select>
+          </div>
+          <div style="display:flex;gap:8px;align-items:end;margin-bottom:16px">
+            <div class="form-group" style="flex:1;margin-bottom:0">
+              <label>Agregar producto al carrito</label>
+              <select id="sProducto"><option value="">Seleccionar...</option></select>
+            </div>
+            <div class="form-group" style="width:100px;margin-bottom:0">
+              <label>Cant</label>
+              <input type="number" id="sCantidad" min="1" value="1">
+            </div>
+            <div class="form-group" style="width:140px;margin-bottom:0">
+              <label>Precio venta</label>
+              <input type="number" id="sPrecioVenta" min="0" step="0.01">
+            </div>
+            <button type="button" class="btn btn-primary" id="sAddToCart" style="margin-bottom:0">+</button>
+          </div>
+          <div id="cartContainer" style="margin-bottom:16px;min-height:50px"></div>
+          <div id="cartSummary" style="display:none;padding:16px;background:#f0f8ff;border-radius:8px;margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;font-size:15px">
+              <span>Total: <strong id="cartTotal">$0.00</strong></span>
+              <span>Costo: <strong id="cartCosto">$0.00</strong></span>
+              <span>Ganancia: <strong id="cartGanancia">$0.00</strong></span>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label for="sFecha">Fecha</label><input type="datetime-local" id="sFecha"></div>
+            <div class="form-group"><label for="sNotas">Notas</label><textarea id="sNotas" style="min-height:50px"></textarea></div>
+          </div>
+        </div>
+        <div class="modal-footer" style="justify-content:space-between">
+          <div style="color:var(--gray);font-size:13px" id="saleCartCount">0 productos en carrito</div>
+          <div style="display:flex;gap:8px">
+            <button type="button" class="btn btn-secondary" id="saleModalCancel">Cancelar</button>
+            <button type="submit" class="btn btn-success" id="saleModalSave">💾 Registrar Venta</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CLIENT MODAL -->
+  <div class="modal-overlay" id="clientModal">
+    <div class="modal" style="max-width:500px">
+      <div class="modal-header"><h2 id="clientModalTitle">Nuevo Cliente</h2><button class="modal-close" id="clientModalClose">&times;</button></div>
+      <form id="clientForm">
+        <div class="modal-body">
+          <input type="hidden" id="clientId">
+          <div class="form-group"><label for="cNombre">Nombre *</label><input type="text" id="cNombre" required></div>
+          <div class="form-row">
+            <div class="form-group"><label for="cTelefono">Teléfono</label><input type="text" id="cTelefono"></div>
+            <div class="form-group"><label for="cEmail">Email</label><input type="email" id="cEmail"></div>
+          </div>
+          <div class="form-group"><label for="cNotas">Notas</label><textarea id="cNotas"></textarea></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="clientModalCancel">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="clientModalSave">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TICKET MODAL -->
+  <div class="modal-overlay" id="ticketModal" onclick="if(event.target===this)closeTicket()">
+    <div class="modal" style="max-width:400px" onclick="event.stopPropagation()">
+      <div class="modal-header"><h2>🧾 Ticket de Venta</h2><button class="modal-close" id="ticketClose">&times;</button></div>
+      <div class="modal-body" id="ticketContent" style="font-family:monospace;font-size:13px;line-height:1.6"></div>
+      <div class="modal-footer" style="justify-content:center;gap:12px">
+        <button class="btn btn-primary" onclick="printTicket()">🖨️ Imprimir</button>
+        <button class="btn btn-success" onclick="downloadTicketPDF()">⬇ Descargar PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
