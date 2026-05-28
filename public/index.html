@@ -169,23 +169,12 @@
             <div class="form-group"><label for="pProveedor">Proveedor *</label><input type="text" id="pProveedor" required></div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label for="pCantidad">Cantidad *</label><input type="number" id="pCantidad" required min="0"></div>
             <div class="form-group"><label for="pCategoria">Categoría</label><input type="text" id="pCategoria"></div>
-          </div>
-          <div class="form-row">
             <div class="form-group"><label for="pPrecioCompra">Precio de compra ($) *</label><input type="number" id="pPrecioCompra" required min="0" step="0.01"></div>
             <div class="form-group"><label for="pPrecioVenta">Precio de venta ($) *</label><input type="number" id="pPrecioVenta" required min="0" step="0.01"></div>
           </div>
-          <div class="form-row">
-            <div class="form-group"><label for="pColor">Color</label><input type="text" id="pColor" placeholder="Ej: Dorado, Plata, Rojo"></div>
-            <div class="form-group"><label for="pMaterial">Material</label><input type="text" id="pMaterial" placeholder="Ej: Oro 14k, Plata 925"></div>
-          </div>
-          <div class="form-group" style="margin-bottom:4px">
-            <label style="display:flex;align-items:center;gap:8px;font-weight:500;font-size:14px;cursor:pointer">
-              <input type="checkbox" id="pTieneVariantes"> Este producto tiene variantes por color
-            </label>
-          </div>
-          <div id="variantesSection" style="display:none">
+          <div class="form-group"><label for="pMaterial">Material</label><input type="text" id="pMaterial" placeholder="Ej: Oro 14k, Plata 925"></div>
+          <div id="variantesSection">
             <label style="font-weight:500;font-size:14px;display:block;margin-bottom:8px">Variantes por color</label>
             <div id="variantesContainer"></div>
             <button type="button" class="btn btn-sm btn-secondary" id="addVarianteBtn" style="margin-bottom:12px">+ Agregar color</button>

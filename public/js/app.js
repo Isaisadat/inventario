@@ -218,7 +218,7 @@ function renderProducts(products) {
   const container = $('productsContainer');
   if (!products.length) { container.innerHTML = '<div class="empty-state"><div class="empty-icon">📦</div><h3>No hay productos</h3><p>Agrega tu primer producto para comenzar</p></div>'; return; }
   let html = `<table class="data-table"><thead><tr>
-    <th>Producto</th><th>Proveedor</th><th>Stock</th><th>Color</th><th>Material</th>
+    <th>Producto</th><th>Proveedor</th><th>Stock total</th><th>Variantes</th><th>Material</th>
     <th>Compra</th><th>Venta</th><th>Ganancia</th><th>Acciones</th>
   </tr></thead><tbody>`;
   products.forEach(p => {
@@ -227,11 +227,8 @@ function renderProducts(products) {
     const sc = p.cantidad <= 5 ? 'text-danger' : (p.cantidad <= 15 ? 'text-warning' : '');
     const isImage = p.url && (p.url.startsWith('http') || p.url.startsWith('/uploads/'));
     const isExternalLink = p.url && !isImage;
-    const hasVariantes = p.variantes && p.variantes.length;
-    const colorStyle = p.color ? `style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${p.color.toLowerCase()};border:1px solid #ddd;margin-right:4px;vertical-align:middle"` : '';
-    const colorCell = hasVariantes
-      ? p.variantes.map(v => `<span style="display:inline-block;padding:2px 8px;margin:2px;border-radius:12px;font-size:11px;background:#f0f0f0">${v.color} <strong>(${v.cantidad})</strong></span>`).join(' ')
-      : (p.color ? `<span ${colorStyle}></span>${escHtml(p.color)}` : '—');
+    const variantes = p.variantes && p.variantes.length ? p.variantes : [{ color: '—', cantidad: p.cantidad }];
+    const colorCell = variantes.map(v => `<span style="display:inline-block;padding:2px 8px;margin:2px;border-radius:12px;font-size:11px;background:#f0f0f0">${escHtml(v.color)} <strong>(${v.cantidad})</strong></span>`).join(' ');
     html += `<tr>
       <td>${isImage ? `<img src="${escHtml(p.url)}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:6px">` : ''}<strong>${escHtml(p.nombre)}</strong>${isExternalLink ? `<br><a href="${escHtml(p.url)}" target="_blank" style="font-size:11px;color:var(--primary)">🔗 URL</a>` : ''}</td>
       <td>${escHtml(p.proveedor)}</td>
@@ -256,9 +253,10 @@ function renderVariantes(variantes) {
   const container = $('variantesContainer');
   const list = variantes || [];
   container.innerHTML = list.map((v, i) => `
-    <div class="form-row" style="margin-bottom:8px;align-items:end">
-      <div class="form-group" style="margin:0;flex:1"><input type="text" class="var-color" value="${escHtml(v.color)}" placeholder="Color"></div>
-      <div class="form-group" style="margin:0;flex:1"><input type="number" class="var-cantidad" value="${v.cantidad}" placeholder="Cantidad" min="0"></div>
+    <div class="form-row" style="margin-bottom:8px;align-items:end;flex-wrap:wrap">
+      <div class="form-group" style="margin:0;flex:1;min-width:100px"><input type="text" class="var-color" value="${escHtml(v.color)}" placeholder="Color"></div>
+      <div class="form-group" style="margin:0;flex:1;min-width:80px"><input type="number" class="var-cantidad" value="${v.cantidad}" placeholder="Cantidad" min="0"></div>
+      <div class="form-group" style="margin:0;flex:2;min-width:150px"><input type="text" class="var-image" value="${escHtml(v.image || '')}" placeholder="URL imagen (opcional)"></div>
       <button type="button" class="btn-icon" onclick="this.parentElement.remove()" style="margin-bottom:4px" title="Eliminar">✕</button>
     </div>
   `).join('');
@@ -268,7 +266,8 @@ function getVariantes() {
   const rows = $('variantesContainer').querySelectorAll('.form-row');
   return Array.from(rows).map(row => ({
     color: row.querySelector('.var-color').value.trim(),
-    cantidad: Number(row.querySelector('.var-cantidad').value) || 0
+    cantidad: Number(row.querySelector('.var-cantidad').value) || 0,
+    image: row.querySelector('.var-image') ? row.querySelector('.var-image').value.trim() : ''
   })).filter(v => v.color);
 }
 
@@ -276,10 +275,11 @@ $('addVarianteBtn').addEventListener('click', () => {
   const container = $('variantesContainer');
   const div = document.createElement('div');
   div.className = 'form-row';
-  div.style.cssText = 'margin-bottom:8px;align-items:end';
+  div.style.cssText = 'margin-bottom:8px;align-items:end;flex-wrap:wrap';
   div.innerHTML = `
-    <div class="form-group" style="margin:0;flex:1"><input type="text" class="var-color" placeholder="Color"></div>
-    <div class="form-group" style="margin:0;flex:1"><input type="number" class="var-cantidad" placeholder="Cantidad" min="0"></div>
+    <div class="form-group" style="margin:0;flex:1;min-width:100px"><input type="text" class="var-color" placeholder="Color"></div>
+    <div class="form-group" style="margin:0;flex:1;min-width:80px"><input type="number" class="var-cantidad" placeholder="Cantidad" min="0"></div>
+    <div class="form-group" style="margin:0;flex:2;min-width:150px"><input type="text" class="var-image" placeholder="URL imagen (opcional)"></div>
     <button type="button" class="btn-icon" onclick="this.parentElement.remove()" style="margin-bottom:4px" title="Eliminar">✕</button>
   `;
   container.appendChild(div);
@@ -293,12 +293,10 @@ function openProductModal(product) {
   $('pNombre').placeholder = 'Ej: Anillo de oro, Pulsera plata';
   $('pProveedor').value = product ? product.proveedor : '';
   $('pProveedor').placeholder = 'Ej: Joyería Lux';
-  $('pCantidad').value = product ? product.cantidad : '';
   $('pCategoria').value = product ? (product.categoria || '') : '';
   $('pCategoria').placeholder = 'Ej: Anillos, Pulseras, Collares';
   $('pPrecioCompra').value = product ? product.precioCompra : '';
   $('pPrecioVenta').value = product ? product.precioVenta : '';
-  $('pColor').value = product ? (product.color || '') : '';
   $('pMaterial').value = product ? (product.material || '') : '';
   $('pUrl').value = product ? (product.url || '') : '';
   $('pDescripcion').value = product ? (product.descripcion || '') : '';
@@ -306,34 +304,17 @@ function openProductModal(product) {
   $('pFechaCompra').value = formatDateInput(product ? product.fechaCompra : new Date());
   $('pFechaPublicacion').value = formatDateInput(product ? product.fechaPublicacion : '');
   $('pNotas').value = product ? (product.notas || '') : '';
-  const hasVariantes = product && product.variantes && product.variantes.length;
-  $('pTieneVariantes').checked = hasVariantes;
-  $('variantesSection').style.display = hasVariantes ? 'block' : 'none';
-  $('pCantidad').disabled = hasVariantes;
-  $('pColor').disabled = hasVariantes;
-  if (hasVariantes) renderVariantes(product.variantes);
-  else $('variantesContainer').innerHTML = '';
+  const variantes = product && product.variantes && product.variantes.length ? product.variantes : [{ color: '', cantidad: 0, image: '' }];
+  renderVariantes(variantes);
   $('productModal').classList.add('show');
   $('modalSave').textContent = product ? 'Actualizar' : 'Guardar';
 }
-
-$('pTieneVariantes').addEventListener('change', function() {
-  const checked = this.checked;
-  $('variantesSection').style.display = checked ? 'block' : 'none';
-  $('pCantidad').disabled = checked;
-  $('pColor').disabled = checked;
-  if (!checked) $('variantesContainer').innerHTML = '';
-});
 
 function closeProductModal() {
   $('productModal').classList.remove('show');
   $('productForm').reset();
   $('productId').value = '';
-  $('variantesSection').style.display = 'none';
   $('variantesContainer').innerHTML = '';
-  $('pCantidad').disabled = false;
-  $('pColor').disabled = false;
-  $('pTieneVariantes').checked = false;
 }
 
 $('modalClose').addEventListener('click', closeProductModal);
@@ -355,24 +336,20 @@ $('productForm').addEventListener('submit', async (e) => {
       if (uploadData.url) url = uploadData.url;
     } catch (err) { alert('Error al subir imagen'); return; }
   }
-  const usarVariantes = $('pTieneVariantes').checked;
-  let variantes = [];
-  if (usarVariantes) {
-    variantes = getVariantes();
-    if (!variantes.length) { alert('Agrega al menos una variante de color o desmarca la opción'); return; }
-  }
+  const variantes = getVariantes();
+  if (!variantes.length) { alert('Agrega al menos una variante de color'); return; }
   const data = {
     nombre: $('pNombre').value.trim(), proveedor: $('pProveedor').value.trim(),
-    cantidad: usarVariantes ? variantes.reduce((s, v) => s + v.cantidad, 0) : Number($('pCantidad').value),
+    cantidad: variantes.reduce((s, v) => s + v.cantidad, 0),
     categoria: $('pCategoria').value.trim(),
     precioCompra: Number($('pPrecioCompra').value), precioVenta: Number($('pPrecioVenta').value),
-    color: usarVariantes ? '' : $('pColor').value.trim(), material: $('pMaterial').value.trim(),
+    material: $('pMaterial').value.trim(),
     descripcion: $('pDescripcion').value.trim(),
     url,
     fechaCompra: $('pFechaCompra').value || undefined, fechaPublicacion: $('pFechaPublicacion').value || undefined,
-    notas: $('pNotas').value.trim()
+    notas: $('pNotas').value.trim(),
+    variantes
   };
-  data.variantes = usarVariantes ? variantes : [];
   try {
     if (id) await api(`/products/${id}`, { method: 'PUT', body: JSON.stringify(data) });
     else await api('/products', { method: 'POST', body: JSON.stringify(data) });

@@ -2,7 +2,9 @@ const mongoose = require('mongoose');
 
 const varianteSchema = new mongoose.Schema({
   color: { type: String, required: true, trim: true },
-  cantidad: { type: Number, required: true, min: 0 }
+  cantidad: { type: Number, required: true, min: 0 },
+  image: { type: String, trim: true, default: '' },
+  colorHex: { type: String, trim: true, default: '' }
 }, { _id: false });
 
 const productSchema = new mongoose.Schema({
