@@ -14,12 +14,6 @@ async function seed() {
         nombre: 'Fernanda',
         rol: 'fleure'
       },
-      {
-        username: 'isai',
-        password: 'ferisa02',
-        nombre: 'Isaí',
-        rol: 'maquillaje'
-      }
     ];
 
     for (const userData of users) {

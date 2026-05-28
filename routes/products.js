@@ -168,15 +168,18 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { nombre, proveedor, cantidad, precioCompra, precioVenta, fechaCompra, fechaPublicacion, categoria, url, color, material, notas } = req.body;
+    const { nombre, proveedor, cantidad, precioCompra, precioVenta, fechaCompra, fechaPublicacion, categoria, url, descripcion, color, material, variantes, notas } = req.body;
     if (!nombre || !proveedor || cantidad === undefined || precioCompra === undefined || precioVenta === undefined) {
       return res.status(400).json({ error: 'Campos requeridos: nombre, proveedor, cantidad, precioCompra, precioVenta' });
     }
+    const variants = variantes && variantes.length ? variantes.filter(v => v.color && v.cantidad > 0) : [];
+    const totalCantidad = variants.length ? variants.reduce((s, v) => s + v.cantidad, 0) : Number(cantidad);
     const product = new Product({
-      usuario: req.user._id, nombre, proveedor, cantidad: Number(cantidad),
+      usuario: req.user._id, nombre, proveedor, cantidad: totalCantidad,
       precioCompra: Number(precioCompra), precioVenta: Number(precioVenta),
       fechaCompra: fechaCompra || Date.now(), fechaPublicacion: fechaPublicacion || null,
-      categoria: categoria || '', url: url || '', color: color || '', material: material || '', notas: notas || ''
+      categoria: categoria || '', url: url || '', descripcion: descripcion || '', color: variants.length ? '' : (color || ''), material: material || '',
+      variantes: variants, notas: notas || ''
     });
     await product.save();
     res.status(201).json(product);
@@ -190,13 +193,20 @@ router.put('/:id', async (req, res) => {
   try {
     const product = await Product.findOne({ _id: req.params.id, usuario: req.user._id });
     if (!product) return res.status(404).json({ error: 'Producto no encontrado' });
-    const fields = ['nombre', 'proveedor', 'cantidad', 'precioCompra', 'precioVenta', 'fechaCompra', 'fechaPublicacion', 'categoria', 'url', 'color', 'material', 'notas', 'activo'];
+    const fields = ['nombre', 'proveedor', 'precioCompra', 'precioVenta', 'fechaCompra', 'fechaPublicacion', 'categoria', 'url', 'descripcion', 'color', 'material', 'notas', 'activo'];
     fields.forEach(f => {
       if (req.body[f] !== undefined) {
-        if (['cantidad', 'precioCompra', 'precioVenta'].includes(f)) product[f] = Number(req.body[f]);
+        if (['precioCompra', 'precioVenta'].includes(f)) product[f] = Number(req.body[f]);
         else product[f] = req.body[f];
       }
     });
+    if (req.body.variantes !== undefined) {
+      const variants = req.body.variantes.filter(v => v.color && v.cantidad > 0);
+      product.variantes = variants;
+      product.cantidad = variants.length ? variants.reduce((s, v) => s + v.cantidad, 0) : Number(req.body.cantidad ?? product.cantidad);
+    } else if (req.body.cantidad !== undefined) {
+      product.cantidad = Number(req.body.cantidad);
+    }
     await product.save();
     res.json(product);
   } catch (err) {

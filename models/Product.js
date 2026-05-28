@@ -1,5 +1,10 @@
 const mongoose = require('mongoose');
 
+const varianteSchema = new mongoose.Schema({
+  color: { type: String, required: true, trim: true },
+  cantidad: { type: Number, required: true, min: 0 }
+}, { _id: false });
+
 const productSchema = new mongoose.Schema({
   usuario: {
     type: mongoose.Schema.Types.ObjectId,
@@ -46,6 +51,10 @@ const productSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  descripcion: {
+    type: String,
+    trim: true
+  },
   color: {
     type: String,
     trim: true
@@ -54,6 +63,7 @@ const productSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  variantes: [varianteSchema],
   notas: {
     type: String,
     trim: true

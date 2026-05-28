@@ -58,14 +58,25 @@ router.post('/', async (req, res) => {
     const saleItems = [];
     let total = 0, costoTotal = 0;
     for (const item of items) {
-      const { productoId, cantidad, precioVenta } = item;
+      const { productoId, cantidad, precioVenta, color } = item;
       if (!productoId || !cantidad || !precioVenta) {
         return res.status(400).json({ error: 'Cada item necesita: productoId, cantidad, precioVenta' });
       }
       const product = await Product.findOne({ _id: productoId, usuario: req.user._id });
       if (!product) return res.status(404).json({ error: `Producto no encontrado: ${productoId}` });
-      if (product.cantidad < cantidad) {
-        return res.status(400).json({ error: `Stock insuficiente para "${product.nombre}". Disponible: ${product.cantidad}` });
+      if (color && product.variantes && product.variantes.length) {
+        const variant = product.variantes.find(v => v.color === color);
+        if (!variant) return res.status(400).json({ error: `Color "${color}" no encontrado en "${product.nombre}"` });
+        if (variant.cantidad < cantidad) {
+          return res.status(400).json({ error: `Stock insuficiente para "${product.nombre}" color ${color}. Disponible: ${variant.cantidad}` });
+        }
+        variant.cantidad -= Number(cantidad);
+        product.cantidad = product.variantes.reduce((s, v) => s + v.cantidad, 0);
+      } else {
+        if (product.cantidad < cantidad) {
+          return res.status(400).json({ error: `Stock insuficiente para "${product.nombre}". Disponible: ${product.cantidad}` });
+        }
+        product.cantidad -= Number(cantidad);
       }
       const itemTotal = Number(cantidad) * Number(precioVenta);
       const itemCosto = Number(cantidad) * product.precioCompra;
@@ -78,11 +89,11 @@ router.post('/', async (req, res) => {
         precioVenta: Number(precioVenta),
         total: itemTotal,
         costoTotal: itemCosto,
-        ganancia: itemGanancia
+        ganancia: itemGanancia,
+        color: color || ''
       });
       total += itemTotal;
       costoTotal += itemCosto;
-      product.cantidad -= Number(cantidad);
       await product.save();
     }
     const sale = new Sale({
@@ -110,7 +121,13 @@ router.delete('/:id', async (req, res) => {
     for (const item of sale.items) {
       const product = await Product.findOne({ _id: item.producto, usuario: req.user._id });
       if (product) {
-        product.cantidad += item.cantidad;
+        if (item.color && product.variantes && product.variantes.length) {
+          const variant = product.variantes.find(v => v.color === item.color);
+          if (variant) variant.cantidad += item.cantidad;
+          product.cantidad = product.variantes.reduce((s, v) => s + v.cantidad, 0);
+        } else {
+          product.cantidad += item.cantidad;
+        }
         await product.save();
       }
     }

@@ -90,7 +90,7 @@ async function showApp() {
   $('appPage').style.display = 'flex';
   $('userAvatar').textContent = currentUser.nombre.charAt(0).toUpperCase();
   $('userName').textContent = currentUser.nombre;
-  $('userRole').textContent = currentUser.rol === 'fleure' ? '💍 Fleure · Joyería' : '💄 Maquillaje';
+  $('userRole').textContent = '💍 Fleure · Joyería';
   loadDashboard();
 }
 
@@ -227,12 +227,16 @@ function renderProducts(products) {
     const sc = p.cantidad <= 5 ? 'text-danger' : (p.cantidad <= 15 ? 'text-warning' : '');
     const isImage = p.url && (p.url.startsWith('http') || p.url.startsWith('/uploads/'));
     const isExternalLink = p.url && !isImage;
+    const hasVariantes = p.variantes && p.variantes.length;
     const colorStyle = p.color ? `style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${p.color.toLowerCase()};border:1px solid #ddd;margin-right:4px;vertical-align:middle"` : '';
+    const colorCell = hasVariantes
+      ? p.variantes.map(v => `<span style="display:inline-block;padding:2px 8px;margin:2px;border-radius:12px;font-size:11px;background:#f0f0f0">${v.color} <strong>(${v.cantidad})</strong></span>`).join(' ')
+      : (p.color ? `<span ${colorStyle}></span>${escHtml(p.color)}` : '—');
     html += `<tr>
       <td>${isImage ? `<img src="${escHtml(p.url)}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:6px">` : ''}<strong>${escHtml(p.nombre)}</strong>${isExternalLink ? `<br><a href="${escHtml(p.url)}" target="_blank" style="font-size:11px;color:var(--primary)">🔗 URL</a>` : ''}</td>
       <td>${escHtml(p.proveedor)}</td>
       <td class="${sc}"><strong>${p.cantidad}</strong></td>
-      <td>${p.color ? `<span ${colorStyle}></span>${escHtml(p.color)}` : '—'}</td>
+      <td>${colorCell}</td>
       <td>${escHtml(p.material || '—')}</td>
       <td>${formatCurrency(p.precioCompra)}</td>
       <td>${formatCurrency(p.precioVenta)}</td>
@@ -247,32 +251,90 @@ function renderProducts(products) {
   container.innerHTML = html;
 }
 
+// ====== VARIANTES ======
+function renderVariantes(variantes) {
+  const container = $('variantesContainer');
+  const list = variantes || [];
+  container.innerHTML = list.map((v, i) => `
+    <div class="form-row" style="margin-bottom:8px;align-items:end">
+      <div class="form-group" style="margin:0;flex:1"><input type="text" class="var-color" value="${escHtml(v.color)}" placeholder="Color"></div>
+      <div class="form-group" style="margin:0;flex:1"><input type="number" class="var-cantidad" value="${v.cantidad}" placeholder="Cantidad" min="0"></div>
+      <button type="button" class="btn-icon" onclick="this.parentElement.remove()" style="margin-bottom:4px" title="Eliminar">✕</button>
+    </div>
+  `).join('');
+}
+
+function getVariantes() {
+  const rows = $('variantesContainer').querySelectorAll('.form-row');
+  return Array.from(rows).map(row => ({
+    color: row.querySelector('.var-color').value.trim(),
+    cantidad: Number(row.querySelector('.var-cantidad').value) || 0
+  })).filter(v => v.color);
+}
+
+$('addVarianteBtn').addEventListener('click', () => {
+  const container = $('variantesContainer');
+  const div = document.createElement('div');
+  div.className = 'form-row';
+  div.style.cssText = 'margin-bottom:8px;align-items:end';
+  div.innerHTML = `
+    <div class="form-group" style="margin:0;flex:1"><input type="text" class="var-color" placeholder="Color"></div>
+    <div class="form-group" style="margin:0;flex:1"><input type="number" class="var-cantidad" placeholder="Cantidad" min="0"></div>
+    <button type="button" class="btn-icon" onclick="this.parentElement.remove()" style="margin-bottom:4px" title="Eliminar">✕</button>
+  `;
+  container.appendChild(div);
+});
+
 // ====== PRODUCT MODAL ======
 function openProductModal(product) {
-  const isFleure = currentUser && currentUser.rol === 'fleure';
   $('productId').value = product ? product._id : '';
   $('modalTitle').textContent = product ? 'Editar Producto' : 'Nuevo Producto';
   $('pNombre').value = product ? product.nombre : '';
-  $('pNombre').placeholder = isFleure ? 'Ej: Anillo de oro, Pulsera plata' : 'Ej: Base de maquillaje';
+  $('pNombre').placeholder = 'Ej: Anillo de oro, Pulsera plata';
   $('pProveedor').value = product ? product.proveedor : '';
-  $('pProveedor').placeholder = isFleure ? 'Ej: Joyería Lux' : 'Ej: Proveedor S.A.';
+  $('pProveedor').placeholder = 'Ej: Joyería Lux';
   $('pCantidad').value = product ? product.cantidad : '';
   $('pCategoria').value = product ? (product.categoria || '') : '';
-  $('pCategoria').placeholder = isFleure ? 'Ej: Anillos, Pulseras, Collares' : 'Ej: Bases, Labiales';
+  $('pCategoria').placeholder = 'Ej: Anillos, Pulseras, Collares';
   $('pPrecioCompra').value = product ? product.precioCompra : '';
   $('pPrecioVenta').value = product ? product.precioVenta : '';
   $('pColor').value = product ? (product.color || '') : '';
   $('pMaterial').value = product ? (product.material || '') : '';
   $('pUrl').value = product ? (product.url || '') : '';
+  $('pDescripcion').value = product ? (product.descripcion || '') : '';
   $('pImagen').value = '';
   $('pFechaCompra').value = formatDateInput(product ? product.fechaCompra : new Date());
   $('pFechaPublicacion').value = formatDateInput(product ? product.fechaPublicacion : '');
   $('pNotas').value = product ? (product.notas || '') : '';
+  const hasVariantes = product && product.variantes && product.variantes.length;
+  $('pTieneVariantes').checked = hasVariantes;
+  $('variantesSection').style.display = hasVariantes ? 'block' : 'none';
+  $('pCantidad').disabled = hasVariantes;
+  $('pColor').disabled = hasVariantes;
+  if (hasVariantes) renderVariantes(product.variantes);
+  else $('variantesContainer').innerHTML = '';
   $('productModal').classList.add('show');
   $('modalSave').textContent = product ? 'Actualizar' : 'Guardar';
 }
 
-function closeProductModal() { $('productModal').classList.remove('show'); $('productForm').reset(); $('productId').value = ''; }
+$('pTieneVariantes').addEventListener('change', function() {
+  const checked = this.checked;
+  $('variantesSection').style.display = checked ? 'block' : 'none';
+  $('pCantidad').disabled = checked;
+  $('pColor').disabled = checked;
+  if (!checked) $('variantesContainer').innerHTML = '';
+});
+
+function closeProductModal() {
+  $('productModal').classList.remove('show');
+  $('productForm').reset();
+  $('productId').value = '';
+  $('variantesSection').style.display = 'none';
+  $('variantesContainer').innerHTML = '';
+  $('pCantidad').disabled = false;
+  $('pColor').disabled = false;
+  $('pTieneVariantes').checked = false;
+}
 
 $('modalClose').addEventListener('click', closeProductModal);
 $('modalCancel').addEventListener('click', closeProductModal);
@@ -293,15 +355,24 @@ $('productForm').addEventListener('submit', async (e) => {
       if (uploadData.url) url = uploadData.url;
     } catch (err) { alert('Error al subir imagen'); return; }
   }
+  const usarVariantes = $('pTieneVariantes').checked;
+  let variantes = [];
+  if (usarVariantes) {
+    variantes = getVariantes();
+    if (!variantes.length) { alert('Agrega al menos una variante de color o desmarca la opción'); return; }
+  }
   const data = {
     nombre: $('pNombre').value.trim(), proveedor: $('pProveedor').value.trim(),
-    cantidad: Number($('pCantidad').value), categoria: $('pCategoria').value.trim(),
+    cantidad: usarVariantes ? variantes.reduce((s, v) => s + v.cantidad, 0) : Number($('pCantidad').value),
+    categoria: $('pCategoria').value.trim(),
     precioCompra: Number($('pPrecioCompra').value), precioVenta: Number($('pPrecioVenta').value),
-    color: $('pColor').value.trim(), material: $('pMaterial').value.trim(),
+    color: usarVariantes ? '' : $('pColor').value.trim(), material: $('pMaterial').value.trim(),
+    descripcion: $('pDescripcion').value.trim(),
     url,
     fechaCompra: $('pFechaCompra').value || undefined, fechaPublicacion: $('pFechaPublicacion').value || undefined,
     notas: $('pNotas').value.trim()
   };
+  data.variantes = usarVariantes ? variantes : [];
   try {
     if (id) await api(`/products/${id}`, { method: 'PUT', body: JSON.stringify(data) });
     else await api('/products', { method: 'POST', body: JSON.stringify(data) });
@@ -318,6 +389,7 @@ async function deleteProduct(id) {
   try { await api(`/products/${id}`, { method: 'DELETE' }); loadProducts(); } catch (err) { alert('Error al eliminar'); }
 }
 window.deleteProduct = deleteProduct;
+
 
 function exportProducts(fmt) {
   const url = fmt === 'pdf' ? `${API}/export/productos/pdf?token=${TOKEN}` : `${API}/export/productos?token=${TOKEN}`;
@@ -349,7 +421,7 @@ function renderSales(sales) {
   </tr></thead><tbody>`;
   sales.forEach(s => {
     const folio = `V-${s._id.toString().slice(-6).toUpperCase()}`;
-    const itemsTxt = s.items.map(i => `${i.cantidad}x ${escHtml(i.nombreProducto)}`).join('<br>');
+    const itemsTxt = s.items.map(i => `${i.cantidad}x ${escHtml(i.nombreProducto)}${i.color ? ` <small style="color:var(--gray)">(${escHtml(i.color)})</small>` : ''}`).join('<br>');
     const itemsCount = s.items.reduce((sum, i) => sum + i.cantidad, 0);
     html += `<tr>
       <td style="font-size:12px;font-weight:600">${folio}</td>
@@ -378,13 +450,15 @@ window.cancelSale = cancelSale;
 async function openSaleModal() {
   cartItems = [];
   $('saleForm').reset();
+  $('sColorContainer').style.display = 'none';
+  $('sColor').value = '';
   $('sFecha').value = formatDateInput(new Date());
   await Promise.all([loadSaleProducts(), loadSaleClients()]);
   renderCart();
   $('saleModal').classList.add('show');
 }
 
-function closeSaleModal() { $('saleModal').classList.remove('show'); $('saleForm').reset(); cartItems = []; }
+function closeSaleModal() { $('saleModal').classList.remove('show'); $('saleForm').reset(); cartItems = []; $('sColorContainer').style.display = 'none'; $('sColor').value = ''; }
 
 $('saleModalClose').addEventListener('click', closeSaleModal);
 $('saleModalCancel').addEventListener('click', closeSaleModal);
@@ -402,6 +476,7 @@ async function loadSaleProducts() {
       o.dataset.stock = p.cantidad;
       o.dataset.precio = p.precioVenta;
       o.dataset.precioCompra = p.precioCompra;
+      o.dataset.variantes = JSON.stringify(p.variantes || []);
       sel.appendChild(o);
     });
   } catch (err) { console.error(err); }
@@ -421,10 +496,24 @@ async function loadSaleClients() {
 }
 
 $('sProducto').addEventListener('change', function() {
+  const colorContainer = $('sColorContainer');
+  const colorSelect = $('sColor');
   if (this.value) {
     const opt = this.options[this.selectedIndex];
     $('sPrecioVenta').value = opt.dataset.precio;
     $('sCantidad').value = 1;
+    const variantes = opt.dataset.variantes ? JSON.parse(opt.dataset.variantes) : [];
+    if (variantes.length) {
+      colorContainer.style.display = 'block';
+      colorSelect.innerHTML = '<option value="">Seleccionar color...</option>' +
+        variantes.filter(v => v.cantidad > 0).map(v => `<option value="${escHtml(v.color)}">${escHtml(v.color)} (Stock: ${v.cantidad})</option>`).join('');
+    } else {
+      colorContainer.style.display = 'none';
+      colorSelect.value = '';
+    }
+  } else {
+    colorContainer.style.display = 'none';
+    colorSelect.value = '';
   }
 });
 
@@ -434,17 +523,32 @@ $('sAddToCart').addEventListener('click', () => {
   const opt = sel.options[sel.selectedIndex];
   const cantidad = parseInt($('sCantidad').value) || 1;
   const precioVenta = parseFloat($('sPrecioVenta').value) || 0;
-  const stock = parseInt(opt.dataset.stock);
-  const cantidadEnCarrito = cartItems.filter(i => i.productoId === sel.value).reduce((s, i) => s + i.cantidad, 0);
-  if (cantidadEnCarrito + cantidad > stock) { alert(`Stock insuficiente. Disponible: ${stock - cantidadEnCarrito}`); return; }
-  const exist = cartItems.find(i => i.productoId === sel.value);
-  if (exist) { exist.cantidad += cantidad; } else {
-    cartItems.push({ productoId: sel.value, nombre: opt.textContent.split(' (')[0], precioCompra: parseFloat(opt.dataset.precioCompra), cantidad, precioVenta });
+  const variantesOpt = opt.dataset.variantes ? JSON.parse(opt.dataset.variantes) : [];
+  let color = '';
+  if (variantesOpt.length) {
+    color = $('sColor').value;
+    if (!color) { alert('Selecciona un color para este producto'); return; }
+    const variant = variantesOpt.find(v => v.color === color);
+    const stockEnCarrito = cartItems.filter(i => i.productoId === sel.value && i.color === color).reduce((s, i) => s + i.cantidad, 0);
+    if (stockEnCarrito + cantidad > (variant ? variant.cantidad : 0)) {
+      alert(`Stock insuficiente para color ${color}. Disponible: ${variant ? variant.cantidad - stockEnCarrito : 0}`);
+      return;
+    }
+  } else {
+    const stock = parseInt(opt.dataset.stock);
+    const cantidadEnCarrito = cartItems.filter(i => i.productoId === sel.value).reduce((s, i) => s + i.cantidad, 0);
+    if (cantidadEnCarrito + cantidad > stock) { alert(`Stock insuficiente. Disponible: ${stock - cantidadEnCarrito}`); return; }
+  }
+  const existIdx = cartItems.findIndex(i => i.productoId === sel.value && i.color === color);
+  if (existIdx >= 0) { cartItems[existIdx].cantidad += cantidad; } else {
+    cartItems.push({ productoId: sel.value, nombre: opt.textContent.split(' (')[0], precioCompra: parseFloat(opt.dataset.precioCompra), cantidad, precioVenta, color });
   }
   renderCart();
   sel.value = '';
   $('sCantidad').value = 1;
   $('sPrecioVenta').value = '';
+  $('sColorContainer').style.display = 'none';
+  $('sColor').value = '';
 });
 
 function removeFromCart(idx) { cartItems.splice(idx, 1); renderCart(); }
@@ -467,7 +571,7 @@ function renderCart() {
     const c = item.cantidad * item.precioCompra;
     total += t; costo += c;
     html += `<tr>
-      <td>${escHtml(item.nombre)}</td>
+      <td>${escHtml(item.nombre)}${item.color ? ` <small style="color:var(--gray)">(${escHtml(item.color)})</small>` : ''}</td>
       <td>${item.cantidad}</td>
       <td>${formatCurrency(item.precioVenta)}</td>
       <td>${formatCurrency(t)}</td>
@@ -487,7 +591,7 @@ $('saleForm').addEventListener('submit', async (e) => {
   if (!cartItems.length) { alert('Agrega al menos un producto al carrito'); return; }
   const clienteOpt = $('sCliente');
   const cliente = clienteOpt.value ? { id: clienteOpt.value, nombre: clienteOpt.options[clienteOpt.selectedIndex].textContent } : undefined;
-  const items = cartItems.map(i => ({ productoId: i.productoId, cantidad: i.cantidad, precioVenta: i.precioVenta }));
+  const items = cartItems.map(i => ({ productoId: i.productoId, cantidad: i.cantidad, precioVenta: i.precioVenta, color: i.color || '' }));
   try {
     const sale = await api('/sales', {
       method: 'POST',
@@ -511,10 +615,11 @@ async function showTicket(saleId) {
     lastTicketId = saleId;
     const folio = `V-${sale._id.toString().slice(-6).toUpperCase()}`;
     const fecha = new Date(sale.fecha).toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short', timeZone: 'America/Mexico_City' });
-    const rol = currentUser && currentUser.rol === 'fleure' ? 'Fleure Joyería' : 'Maquillaje';
+    const rol = 'Fleure Joyería';
     let itemsHtml = '';
     sale.items.forEach(i => {
-      itemsHtml += `<tr><td>${i.cantidad}x ${escHtml(i.nombreProducto)}</td><td style="text-align:right">${formatCurrency(i.precioVenta)}</td><td style="text-align:right">${formatCurrency(i.total)}</td></tr>`;
+      const colorTxt = i.color ? ` (${escHtml(i.color)})` : '';
+      itemsHtml += `<tr><td>${i.cantidad}x ${escHtml(i.nombreProducto)}${colorTxt}</td><td style="text-align:right">${formatCurrency(i.precioVenta)}</td><td style="text-align:right">${formatCurrency(i.total)}</td></tr>`;
     });
     $('ticketContent').innerHTML = `
       <div style="text-align:center;margin-bottom:12px">

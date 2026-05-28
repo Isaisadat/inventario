@@ -30,7 +30,7 @@ function formatDate(d) {
 
 function addHeaderFooter(doc, title, user, isLastPage) {
   doc.fontSize(8).fillColor('#999');
-  doc.text(`Inventario Compartido · ${user.nombre} (${user.rol === 'fleure' ? 'Joyería' : 'Maquillaje'})`, 50, 10, { align: 'center' });
+    doc.text(`Inventario Compartido · ${user.nombre} (Joyería)`, 50, 10, { align: 'center' });
   doc.text(`Generado: ${new Date().toLocaleString('es-MX')}`, 50, 770, { align: 'center' });
   if (!isLastPage) doc.addPage();
 }
@@ -44,7 +44,7 @@ router.get('/productos/pdf', async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename=inventario_${new Date().toISOString().split('T')[0]}.pdf`);
     doc.pipe(res);
     doc.fontSize(20).fillColor('#6C5CE7').text('Inventario de Productos', 50, 40, { align: 'center' });
-    doc.fontSize(10).fillColor('#666').text(`${req.user.nombre} · ${req.user.rol === 'fleure' ? 'Fleure Joyería' : 'Maquillaje'}`, { align: 'center' });
+    doc.fontSize(10).fillColor('#666').text(`${req.user.nombre} · Fleure Joyería`, { align: 'center' });
     doc.moveDown(0.5);
     doc.fontSize(8).fillColor('#999').text(`Generado: ${new Date().toLocaleString('es-MX')}`, { align: 'center' });
     doc.moveDown(1);
@@ -134,7 +134,7 @@ router.get('/ventas/pdf', async (req, res) => {
     doc.rect(0, 140, doc.page.width, 4).fill(BEIGE_DARK);
 
     doc.fontSize(28).fillColor(TEXT_ON_BEIGE).text('Historial de Ventas', 50, 40, { align: 'center' });
-    doc.fontSize(12).fillColor(TEXT_ON_BEIGE).opacity(0.9).text(`${req.user.nombre} · ${req.user.rol === 'fleure' ? 'Fleure Joyería' : 'Maquillaje'}`, { align: 'center' });
+    doc.fontSize(12).fillColor(TEXT_ON_BEIGE).opacity(0.9).text(`${req.user.nombre} · Fleure Joyería`, { align: 'center' });
     doc.opacity(1);
 
     let period = '';
@@ -152,7 +152,7 @@ router.get('/ventas/pdf', async (req, res) => {
         doc.rect(0, 0, doc.page.width, 140).fill(BEIGE);
         doc.rect(0, 140, doc.page.width, 4).fill(BEIGE_DARK);
         doc.fontSize(28).fillColor(TEXT_ON_BEIGE).text('Historial de Ventas', 50, 40, { align: 'center' });
-        doc.fontSize(12).fillColor(TEXT_ON_BEIGE).opacity(0.9).text(`${req.user.nombre} · ${req.user.rol === 'fleure' ? 'Fleure Joyería' : 'Maquillaje'}`, { align: 'center' });
+    doc.fontSize(12).fillColor(TEXT_ON_BEIGE).opacity(0.9).text(`${req.user.nombre} · Fleure Joyería`, { align: 'center' });
         doc.opacity(1);
         doc.fontSize(9).fillColor(TEXT_MEDIUM).text(`Generado: ${new Date().toLocaleString('es-MX')}`, 50, 160, { align: 'center' });
         doc.rect(50, 178, 500, 2).fill(BEIGE).opacity(0.3);
@@ -212,7 +212,7 @@ router.get('/ventas/pdf', async (req, res) => {
     doc.rect(0, 0, doc.page.width, 160).fill(BEIGE);
     doc.rect(0, 160, doc.page.width, 4).fill(BEIGE_DARK);
     doc.fontSize(28).fillColor(TEXT_ON_BEIGE).text('Resumen General', 50, 50, { align: 'center' });
-    doc.fontSize(12).fillColor(TEXT_ON_BEIGE).opacity(0.9).text(`${req.user.nombre} · ${req.user.rol === 'fleure' ? 'Fleure Joyería' : 'Maquillaje'}`, { align: 'center' });
+    doc.fontSize(12).fillColor(TEXT_ON_BEIGE).opacity(0.9).text(`${req.user.nombre} · Fleure Joyería`, { align: 'center' });
     doc.opacity(1);
 
     const summaryY = 200;
@@ -298,7 +298,7 @@ router.get('/ticket/:id', async (req, res) => {
     doc.rect(0, 95, doc.page.width, 3).fill(BEIGE_DARK);
 
     doc.fontSize(12).fillColor(TEXT_ON_BEIGE).text('Ticket de Venta', 30, 25, { align: 'center' });
-    doc.fontSize(8).fillColor(TEXT_ON_BEIGE).opacity(0.9).text(`${req.user.rol === 'fleure' ? 'Fleure Joyería' : 'Maquillaje'}`, 30, 48, { align: 'center' });
+    doc.fontSize(8).fillColor(TEXT_ON_BEIGE).opacity(0.9).text(`Fleure Joyería`, 30, 48, { align: 'center' });
     doc.opacity(1);
 
     const folio = `V-${sale._id.toString().slice(-6).toUpperCase()}`;

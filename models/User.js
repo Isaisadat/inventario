@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema({
   },
   rol: {
     type: String,
-    enum: ['fleure', 'maquillaje'],
+    enum: ['fleure'],
     required: true
   }
 }, { timestamps: true });

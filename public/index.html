@@ -11,7 +11,7 @@
   <div id="loginPage" class="login-page">
     <div class="login-container">
       <h1>Inventario</h1>
-      <p class="subtitle">Compartido · <span>Fleure · Joyería & Maquillaje</span></p>
+      <p class="subtitle">Compartido · <span>Fleure · Joyería</span></p>
       <div id="loginError" class="error-msg"></div>
       <form id="loginForm">
         <div class="form-group">
@@ -180,8 +180,19 @@
             <div class="form-group"><label for="pColor">Color</label><input type="text" id="pColor" placeholder="Ej: Dorado, Plata, Rojo"></div>
             <div class="form-group"><label for="pMaterial">Material</label><input type="text" id="pMaterial" placeholder="Ej: Oro 14k, Plata 925"></div>
           </div>
+          <div class="form-group" style="margin-bottom:4px">
+            <label style="display:flex;align-items:center;gap:8px;font-weight:500;font-size:14px;cursor:pointer">
+              <input type="checkbox" id="pTieneVariantes"> Este producto tiene variantes por color
+            </label>
+          </div>
+          <div id="variantesSection" style="display:none">
+            <label style="font-weight:500;font-size:14px;display:block;margin-bottom:8px">Variantes por color</label>
+            <div id="variantesContainer"></div>
+            <button type="button" class="btn btn-sm btn-secondary" id="addVarianteBtn" style="margin-bottom:12px">+ Agregar color</button>
+          </div>
           <div class="form-group"><label for="pImagen">Imagen del producto</label><input type="file" id="pImagen" accept="image/*"></div>
           <div class="form-group" id="pUrlGroup" style="display:none"><label for="pUrl">URL del producto</label><input type="url" id="pUrl" placeholder="https://..."></div>
+          <div class="form-group" id="pDescripcionGroup"><label for="pDescripcion">Descripción (para Fleure)</label><textarea id="pDescripcion" placeholder="Describe el producto..." style="min-height:60px"></textarea></div>
           <div class="form-row">
             <div class="form-group"><label for="pFechaCompra">Fecha de compra</label><input type="date" id="pFechaCompra"></div>
             <div class="form-group"><label for="pFechaPublicacion">Fecha de publicación</label><input type="date" id="pFechaPublicacion"></div>
@@ -219,6 +230,12 @@
               <input type="number" id="sPrecioVenta" min="0" step="0.01">
             </div>
             <button type="button" class="btn btn-primary" id="sAddToCart" style="margin-bottom:0">+</button>
+          </div>
+          <div id="sColorContainer" style="display:none;margin-bottom:16px">
+            <div class="form-group" style="margin-bottom:0">
+              <label for="sColor">Color</label>
+              <select id="sColor"><option value="">Seleccionar color...</option></select>
+            </div>
           </div>
           <div id="cartContainer" style="margin-bottom:16px;min-height:50px"></div>
           <div id="cartSummary" style="display:none;padding:16px;background:#f0f8ff;border-radius:8px;margin-bottom:16px">

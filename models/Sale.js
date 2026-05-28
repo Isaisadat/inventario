@@ -12,7 +12,8 @@ const saleItemSchema = new mongoose.Schema({
   precioVenta: { type: Number, required: true, min: 0 },
   total: { type: Number, required: true },
   costoTotal: { type: Number, default: 0 },
-  ganancia: { type: Number, default: 0 }
+  ganancia: { type: Number, default: 0 },
+  color: { type: String, default: '' }
 }, { _id: false });
 
 const saleSchema = new mongoose.Schema({
