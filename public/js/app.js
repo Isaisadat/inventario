@@ -225,9 +225,10 @@ function renderProducts(products) {
     const g = p.precioVenta - p.precioCompra;
     const mg = p.precioCompra > 0 ? ((g / p.precioCompra) * 100).toFixed(0) : 0;
     const sc = p.cantidad <= 5 ? 'text-danger' : (p.cantidad <= 15 ? 'text-warning' : '');
+    const imgSrc = p.url && (p.url.startsWith('/uploads/') || p.url.startsWith('http'));
     const colorStyle = p.color ? `style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${p.color.toLowerCase()};border:1px solid #ddd;margin-right:4px;vertical-align:middle"` : '';
     html += `<tr>
-      <td><strong>${escHtml(p.nombre)}</strong>${p.url ? `<br><a href="${escHtml(p.url)}" target="_blank" style="font-size:11px;color:var(--primary)">🔗 URL</a>` : ''}</td>
+      <td>${imgSrc ? `<img src="${escHtml(p.url)}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:6px">` : ''}<strong>${escHtml(p.nombre)}</strong>${p.url && !p.url.startsWith('/uploads/') ? `<br><a href="${escHtml(p.url)}" target="_blank" style="font-size:11px;color:var(--primary)">🔗 URL</a>` : ''}</td>
       <td>${escHtml(p.proveedor)}</td>
       <td class="${sc}"><strong>${p.cantidad}</strong></td>
       <td>${p.color ? `<span ${colorStyle}></span>${escHtml(p.color)}` : '—'}</td>
@@ -262,6 +263,7 @@ function openProductModal(product) {
   $('pColor').value = product ? (product.color || '') : '';
   $('pMaterial').value = product ? (product.material || '') : '';
   $('pUrl').value = product ? (product.url || '') : '';
+  $('pImagen').value = '';
   $('pFechaCompra').value = formatDateInput(product ? product.fechaCompra : new Date());
   $('pFechaPublicacion').value = formatDateInput(product ? product.fechaPublicacion : '');
   $('pNotas').value = product ? (product.notas || '') : '';
@@ -278,12 +280,24 @@ $('productModal').addEventListener('click', e => { if (e.target === $('productMo
 $('productForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const id = $('productId').value;
+  const fileInput = $('pImagen');
+  let url = $('pUrl').value.trim();
+  if (fileInput.files && fileInput.files[0]) {
+    try {
+      const formData = new FormData();
+      formData.append('imagen', fileInput.files[0]);
+      const token = localStorage.getItem('token');
+      const uploadRes = await fetch('/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+      const uploadData = await uploadRes.json();
+      if (uploadData.url) url = uploadData.url;
+    } catch (err) { alert('Error al subir imagen'); return; }
+  }
   const data = {
     nombre: $('pNombre').value.trim(), proveedor: $('pProveedor').value.trim(),
     cantidad: Number($('pCantidad').value), categoria: $('pCategoria').value.trim(),
     precioCompra: Number($('pPrecioCompra').value), precioVenta: Number($('pPrecioVenta').value),
     color: $('pColor').value.trim(), material: $('pMaterial').value.trim(),
-    url: $('pUrl').value.trim(),
+    url,
     fechaCompra: $('pFechaCompra').value || undefined, fechaPublicacion: $('pFechaPublicacion').value || undefined,
     notas: $('pNotas').value.trim()
   };
