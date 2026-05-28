@@ -256,10 +256,28 @@ function renderVariantes(variantes) {
     <div class="form-row" style="margin-bottom:8px;align-items:end;flex-wrap:wrap">
       <div class="form-group" style="margin:0;flex:1;min-width:100px"><input type="text" class="var-color" value="${escHtml(v.color)}" placeholder="Color"></div>
       <div class="form-group" style="margin:0;flex:1;min-width:80px"><input type="number" class="var-cantidad" value="${v.cantidad}" placeholder="Cantidad" min="0"></div>
-      <div class="form-group" style="margin:0;flex:2;min-width:150px"><input type="text" class="var-image" value="${escHtml(v.image || '')}" placeholder="URL imagen (opcional)"></div>
+      <div style="display:flex;gap:4px;flex:2;min-width:150px;align-items:center">
+        <input type="text" class="var-image" value="${escHtml(v.image || '')}" placeholder="URL imagen" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.8rem">
+        <input type="file" accept="image/*" style="display:none" class="var-file" onchange="uploadVariantImage(this)">
+        <button type="button" class="btn btn-sm btn-secondary" onclick="this.previousElementSibling.click()" style="white-space:nowrap;padding:4px 10px;font-size:0.7rem">Subir</button>
+      </div>
       <button type="button" class="btn-icon" onclick="this.parentElement.remove()" style="margin-bottom:4px" title="Eliminar">✕</button>
     </div>
   `).join('');
+}
+
+async function uploadVariantImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const formData = new FormData();
+  formData.append('imagen', file);
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch('/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+    const data = await res.json();
+    if (data.url) input.closest('.form-row').querySelector('.var-image').value = data.url;
+  } catch (e) { alert('Error al subir imagen'); }
+  input.value = '';
 }
 
 function getVariantes() {
@@ -279,7 +297,11 @@ $('addVarianteBtn').addEventListener('click', () => {
   div.innerHTML = `
     <div class="form-group" style="margin:0;flex:1;min-width:100px"><input type="text" class="var-color" placeholder="Color"></div>
     <div class="form-group" style="margin:0;flex:1;min-width:80px"><input type="number" class="var-cantidad" placeholder="Cantidad" min="0"></div>
-    <div class="form-group" style="margin:0;flex:2;min-width:150px"><input type="text" class="var-image" placeholder="URL imagen (opcional)"></div>
+    <div style="display:flex;gap:4px;flex:2;min-width:150px;align-items:center">
+      <input type="text" class="var-image" placeholder="URL imagen" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.8rem">
+      <input type="file" accept="image/*" style="display:none" class="var-file" onchange="uploadVariantImage(this)">
+      <button type="button" class="btn btn-sm btn-secondary" onclick="this.previousElementSibling.click()" style="white-space:nowrap;padding:4px 10px;font-size:0.7rem">Subir</button>
+    </div>
     <button type="button" class="btn-icon" onclick="this.parentElement.remove()" style="margin-bottom:4px" title="Eliminar">✕</button>
   `;
   container.appendChild(div);
@@ -298,9 +320,7 @@ function openProductModal(product) {
   $('pPrecioCompra').value = product ? product.precioCompra : '';
   $('pPrecioVenta').value = product ? product.precioVenta : '';
   $('pMaterial').value = product ? (product.material || '') : '';
-  $('pUrl').value = product ? (product.url || '') : '';
   $('pDescripcion').value = product ? (product.descripcion || '') : '';
-  $('pImagen').value = '';
   $('pFechaCompra').value = formatDateInput(product ? product.fechaCompra : new Date());
   $('pFechaPublicacion').value = formatDateInput(product ? product.fechaPublicacion : '');
   $('pNotas').value = product ? (product.notas || '') : '';
@@ -324,18 +344,6 @@ $('productModal').addEventListener('click', e => { if (e.target === $('productMo
 $('productForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const id = $('productId').value;
-  const fileInput = $('pImagen');
-  let url = $('pUrl').value.trim();
-  if (fileInput.files && fileInput.files[0]) {
-    try {
-      const formData = new FormData();
-      formData.append('imagen', fileInput.files[0]);
-      const token = localStorage.getItem('token');
-      const uploadRes = await fetch('/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
-      const uploadData = await uploadRes.json();
-      if (uploadData.url) url = uploadData.url;
-    } catch (err) { alert('Error al subir imagen'); return; }
-  }
   const variantes = getVariantes();
   if (!variantes.length) { alert('Agrega al menos una variante de color'); return; }
   const data = {
@@ -345,7 +353,6 @@ $('productForm').addEventListener('submit', async (e) => {
     precioCompra: Number($('pPrecioCompra').value), precioVenta: Number($('pPrecioVenta').value),
     material: $('pMaterial').value.trim(),
     descripcion: $('pDescripcion').value.trim(),
-    url,
     fechaCompra: $('pFechaCompra').value || undefined, fechaPublicacion: $('pFechaPublicacion').value || undefined,
     notas: $('pNotas').value.trim(),
     variantes
